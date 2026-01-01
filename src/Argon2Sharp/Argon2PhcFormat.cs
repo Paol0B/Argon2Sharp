@@ -255,7 +255,10 @@ public static class Argon2PhcFormat
         ArgumentNullException.ThrowIfNull(parameters);
         
         if (parameters.Salt == null)
-            throw new ArgumentException("Parameters must include salt", nameof(parameters));
+        {
+            var salt = Argon2.GenerateSalt(16);
+            parameters = parameters with { Salt = salt };
+        }
 
         var argon2 = new Argon2(parameters);
         byte[] hash = argon2.Hash(password);

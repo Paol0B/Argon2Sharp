@@ -29,7 +29,15 @@ Console.WriteLine($"Verification with wrong password: {isInvalid}\n");
 // Example 3: Using PHC string format (v3.0 API)
 Console.WriteLine("Example 3: PHC String Format");
 Console.WriteLine("----------------------------------");
-string phcHash = Argon2PhcFormat.HashToPhcStringWithAutoSalt("SecurePassword");
+var parameters1 = Argon2Parameters.CreateBuilder()
+    .WithMemorySizeKB(65536)
+    .WithRustImplementation(true)
+    .WithIterations(4)
+    .WithParallelism(4)
+    .WithRandomSalt()
+    .Build();
+
+string phcHash = Argon2PhcFormat.HashToPhcStringWithAutoSalt("SecurePassword", parameters1);
 Console.WriteLine($"PHC Format Hash: {phcHash}");
 
 var (phcValid, extractedParams) = Argon2PhcFormat.VerifyPhcString("SecurePassword", phcHash);
@@ -78,7 +86,7 @@ foreach (Argon2Type type in Enum.GetValues<Argon2Type>())
         HashLength = 32,
         Salt = testSalt
     };
-    
+
     var typeArgon2 = new Argon2(typeParams);
     byte[] typeHash = typeArgon2.Hash(testPassword);
     Console.WriteLine($"{type}: {Convert.ToBase64String(typeHash)}");
@@ -106,7 +114,7 @@ Console.WriteLine($"{Convert.ToBase64String(advancedHash)}\n");
 // Example 7: Performance comparison
 Console.WriteLine("Example 7: Performance Comparison");
 Console.WriteLine("----------------------------------");
-var testParams = new[] 
+var testParams = new[]
 {
     ("Low Memory (32 KB)", Argon2Parameters.CreateBuilder().WithMemorySizeKB(32).WithIterations(3).WithParallelism(4).WithRandomSalt().Build()),
     ("Medium Memory (1 MB)", Argon2Parameters.CreateBuilder().WithMemorySizeKB(1024).WithIterations(3).WithParallelism(4).WithRandomSalt().Build()),

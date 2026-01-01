@@ -39,12 +39,21 @@ internal sealed class Argon2Engine
         _isArgon2id = _parameters.Type == Argon2Type.Argon2id;
 
         // Calculate memory layout
-        _memoryBlocks = _parameters.MemorySizeKB;
+        // RFC 9106: m' = 4 * p * floor(m / (4 * p))
+        int m = _parameters.MemorySizeKB;
+        int p = _parallelism;
+        int syncPoints = Argon2Core.SyncPoints; // 4
+
+        _memoryBlocks = syncPoints * p * (m / (syncPoints * p));
+        
+        // Ensure minimum memory size (8 blocks per lane)
+        if (_memoryBlocks < 8 * p)
+        {
+             _memoryBlocks = 8 * p;
+        }
+
         _laneLength = _memoryBlocks / _parallelism;
         _segmentLength = _laneLength / Argon2Core.SyncPoints;
-
-        // Ensure minimum requirements
-        _memoryBlocks = _parallelism * _laneLength;
     }
 
     /// <summary>

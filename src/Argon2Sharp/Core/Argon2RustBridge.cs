@@ -1,13 +1,39 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Argon2Sharp.Core;
 
-internal static class Argon2RustBridge
+internal static partial class Argon2RustBridge
 {
     private const string LibraryName = "argon2sharp_rust";
 
-    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "argon2_hash")]
-    private static extern int Argon2Hash(
+    static Argon2RustBridge()
+    {
+        NativeLibrary.SetDllImportResolver(typeof(Argon2RustBridge).Assembly, DllImportResolver);
+    }
+
+    private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        if (libraryName != LibraryName)
+            return IntPtr.Zero;
+
+        string root = Path.GetDirectoryName(assembly.Location)!;
+        
+        // Try to load from runtimes folder
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            string path = Path.Combine(root, "runtimes/linux-x64/native/libargon2sharp_rust.so");
+            if (NativeLibrary.TryLoad(path, out IntPtr handle))
+                return handle;
+        }
+        // Add other platforms as needed
+        
+        return IntPtr.Zero;
+    }
+
+    [LibraryImport(LibraryName, EntryPoint = "argon2_hash")]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    private static partial int Argon2Hash(
         IntPtr password,
         UIntPtr passwordLen,
         IntPtr salt,

@@ -134,7 +134,7 @@ internal static class Blake2b
         int remaining = outLen - (HashSizeInBytes / 2);
 
         // Subsequent blocks
-        while (remaining > HashSizeInBytes)
+        while (remaining > HashSizeInBytes / 2)
         {
             Hash(hash, hash);
             hash.Slice(0, HashSizeInBytes / 2).CopyTo(output.Slice(pos));

@@ -21,7 +21,7 @@ internal static class Argon2Core
     /// Operates on two 1024-byte blocks and produces one 1024-byte block.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CompressionG(Span<ulong> block, int a, int b, int c, int d)
+    private static void CompressionG(Span<ulong> block, int a, int b, int c, int d)
     {
         ulong va = block[a];
         ulong vb = block[b];
