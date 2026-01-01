@@ -9,14 +9,14 @@ namespace Argon2Sharp;
 /// </summary>
 /// <remarks>
 /// <para>This class is immutable and thread-safe. Use the <see cref="Builder"/> class for fluent parameter construction.</para>
-/// <para>For most password hashing scenarios, use one of the factory methods: 
+/// <para>For most password hashing scenarios, use one of the factory methods:
 /// <see cref="CreateDefault"/>, <see cref="CreateHighSecurity"/>, or <see cref="CreateForTesting"/>.</para>
 /// </remarks>
 /// <example>
 /// <code>
 /// // Using factory method
 /// var parameters = Argon2Parameters.CreateDefault() with { Salt = mySalt };
-/// 
+///
 /// // Using builder
 /// var parameters = Argon2Parameters.CreateBuilder()
 ///     .WithMemorySizeKB(65536)
@@ -382,17 +382,6 @@ public sealed record Argon2Parameters
             if (maxDegreeOfParallelism.HasValue && maxDegreeOfParallelism.Value < 1)
                 throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism), "MaxDegreeOfParallelism must be at least 1 if specified");
             _maxDegreeOfParallelism = maxDegreeOfParallelism;
-            return this;
-        }
-
-        /// <summary>
-        /// Sets whether to use the Rust-based native implementation.
-        /// </summary>
-        /// <param name="useRust">True to use Rust implementation, false for C#.</param>
-        /// <returns>This builder instance for method chaining.</returns>
-        public Builder WithRustImplementation(bool useRust)
-        {
-            _useRust = useRust;
             return this;
         }
 
