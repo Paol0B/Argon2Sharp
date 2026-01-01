@@ -1,0 +1,119 @@
+name: Build native runtimes and pack NuGet
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    outputs:
+      linux-artifact: ${{ steps.upload.outputs.artifact-name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build Rust (linux)
+        run: |
+          cd src/Argon2Sharp.Rust
+          cargo build --release
+      - name: Upload linux native
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build Rust (windows-msvc)
+        run: |
+          cd src\Argon2Sharp.Rust
+          rustup target add x86_64-pc-windows-msvc
+          cargo build --release --target x86_64-pc-windows-msvc
+      - name: Upload windows native
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build Rust (macOS x86_64 and arm64)
+        run: |
+          cd src/Argon2Sharp.Rust
+          rustup target add x86_64-apple-darwin aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+      - name: Upload macos native
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib
+            src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib
+
+  pack:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux
+          path: artifacts
+      - name: Download windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: artifacts
+      - name: Download macos artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos
+          path: artifacts
+      - name: Prepare native artifacts
+        run: |
+          mkdir -p src/Argon2Sharp.Rust/target/release
+          # place linux so
+          cp artifacts/libargon2_sharp_core.so src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so || true
+          # place windows dll
+          mkdir -p src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release
+          cp artifacts/argon2_sharp_core.dll src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll || true
+          # place macos dylibs
+          mkdir -p src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release
+          mkdir -p src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release
+          cp artifacts/libargon2_sharp_core.dylib src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib || true
+          cp artifacts/libargon2_sharp_core.dylib src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib || true
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pack NuGet
+        run: |
+          dotnet pack src/Argon2Sharp/Argon2Sharp.csproj -c Release -o ./nupkgs /p:IncludeSymbols=false
+      - name: Upload nupkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkgs
+          path: nupkgs

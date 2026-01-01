@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="BuildRust">
 
   <PropertyGroup>
     <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>Pure C# implementation of Argon2 password hashing algorithm (Argon2d, Argon2i, Argon2id) based on RFC 9106</Description>
+    <Description>High-performance Argon2 password hashing for .NET with Rust-accelerated cryptographic core. Plug-and-play NuGet with automatic native compilation. RFC 9106 compliant (Argon2d, Argon2i, Argon2id).</Description>
     <PackageTags>argon2;argon2id;argon2i;argon2d;password;hashing;cryptography;security;rfc9106;blake2b</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
@@ -13,5 +13,58 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <RustProjectDir>$(MSBuildThisFileDirectory)../Argon2Sharp.Rust</RustProjectDir>
+  </PropertyGroup>
+
+  <Target Name="BuildRust" BeforeTargets="Build">
+    <Exec Command="cargo build --release" WorkingDirectory="$(RustProjectDir)" />
+    <ItemGroup>
+      <Content Include="$(RustProjectDir)/target/release/libargon2_sharp_core.so" Condition="Exists('$(RustProjectDir)/target/release/libargon2_sharp_core.so')">
+        <Link>libargon2_sharp_core.so</Link>
+        <PackagePath>runtimes/linux-x64/native/libargon2_sharp_core.so</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-x64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-pc-windows-gnu/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/x86_64-pc-windows-gnu/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-x64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-x64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/release/libargon2_sharp_core.dylib')">
+        <Link>libargon2_sharp_core.dylib</Link>
+        <PackagePath>runtimes/osx-x64/native/libargon2_sharp_core.dylib</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib')">
+        <Link>libargon2_sharp_core.dylib</Link>
+        <PackagePath>runtimes/osx-x64/native/libargon2_sharp_core.dylib</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib')">
+        <Link>libargon2_sharp_core.dylib</Link>
+        <PackagePath>runtimes/osx-arm64/native/libargon2_sharp_core.dylib</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+
 
 </Project>

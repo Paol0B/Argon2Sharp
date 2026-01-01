@@ -1,0 +1,12 @@
+[package]
+name = "argon2_sharp_core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+argon2 = "0.5"
+blake2 = "0.10"
+libc = "0.2"
