@@ -56,6 +56,12 @@ internal sealed class Argon2Engine
         if (output.Length != _parameters.HashLength)
             throw new ArgumentException($"Output buffer must be {_parameters.HashLength} bytes");
 
+        if (_parameters.UseRust)
+        {
+            Argon2RustBridge.Hash(_parameters, password, output);
+            return;
+        }
+
         int totalQwords = _memoryBlocks * Argon2Core.QwordsInBlock;
         
         // Allocate memory blocks from pool
@@ -233,6 +239,16 @@ internal sealed class Argon2Engine
         // Determine if data-independent mode for this segment
         bool dataIndependent = _isArgon2i || (_isArgon2id && pass == 0 && slice < 2);
 
+        // Pre-calculate addresses for data-independent mode
+        int[]? refLanes = null;
+        int[]? refIndices = null;
+        if (dataIndependent)
+        {
+            refLanes = new int[_segmentLength];
+            refIndices = new int[_segmentLength];
+            GenerateAddresses(pass, lane, slice, refLanes, refIndices);
+        }
+
         for (int i = startIndex; i < _segmentLength; i++)
         {
             // Calculate previous block offset
@@ -247,7 +263,8 @@ internal sealed class Argon2Engine
             int refLane, refIndex;
             if (dataIndependent)
             {
-                GetRefBlockIndexDataIndependent(pass, lane, slice, i, out refLane, out refIndex);
+                refLane = refLanes![i];
+                refIndex = refIndices![i];
             }
             else
             {
@@ -262,37 +279,125 @@ internal sealed class Argon2Engine
             var currentBlock = GetBlockByOffset(memory, currentOffset);
 
             // Compute new block
-            Argon2Core.FillBlock(prevBlock, refBlock, currentBlock);
+            Argon2Core.FillBlock(prevBlock, refBlock, currentBlock, withXor: pass != 0);
 
             currentOffset++;
         }
     }
 
-    /// <summary>
-    /// Get reference block index using data-independent addressing.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void GetRefBlockIndexDataIndependent(int pass, int lane, int slice, int index,
-        out int refLane, out int refIndex)
+    private void GenerateAddresses(int pass, int lane, int slice, int[] refLanes, int[] refIndices)
     {
-        // Generate pseudo-random value based on position
-        ulong pseudoRand = ((ulong)pass << 32) | ((ulong)lane << 24) | ((ulong)slice << 16) | (ulong)(uint)index;
+        int iterations = (_segmentLength + Argon2Core.QwordsInBlock - 1) / Argon2Core.QwordsInBlock;
+        Span<ulong> inputBlock = stackalloc ulong[Argon2Core.QwordsInBlock];
+        Span<ulong> z = stackalloc ulong[Argon2Core.QwordsInBlock];
+        Span<ulong> zPrime = stackalloc ulong[Argon2Core.QwordsInBlock];
 
-        refLane = (int)(pseudoRand % (ulong)_parallelism);
-
-        int refAreaSize = CalculateRefAreaSize(pass, slice, index, refLane == lane);
-        if (refAreaSize <= 0) refAreaSize = 1;
-        
-        refIndex = (int)(pseudoRand % (ulong)refAreaSize);
-
-        // Adjust if in same lane
-        if (refLane == lane)
+        for (int i = 0; i < iterations; i++)
         {
-            int startPos = slice * _segmentLength;
-            if (pass == 0 && slice == 0)
-                startPos = 0;
-            refIndex = (startPos + refIndex) % _laneLength;
+            // Construct input block
+            inputBlock.Clear();
+            inputBlock[0] = (ulong)pass;
+            inputBlock[1] = (ulong)lane;
+            inputBlock[2] = (ulong)slice;
+            inputBlock[3] = (ulong)_memoryBlocks;
+            inputBlock[4] = (ulong)_iterations;
+            inputBlock[5] = (ulong)_parameters.Type;
+            inputBlock[6] = (ulong)(i + 1);
+            inputBlock[7] = 0;
+            
+            // Z' = P(input) ^ input
+            inputBlock.CopyTo(z);
+            Argon2Core.PermutationP(z);
+            Argon2Core.XorBlock(inputBlock, z);
+            
+            // Z = P(Z') ^ Z'
+            z.CopyTo(zPrime);
+            Argon2Core.PermutationP(zPrime);
+            Argon2Core.XorBlock(z, zPrime);
+            
+            // Extract addresses
+            for (int j = 0; j < Argon2Core.QwordsInBlock; j++)
+            {
+                int index = i * Argon2Core.QwordsInBlock + j;
+                if (index >= _segmentLength) break;
+                
+                ulong v = zPrime[j];
+                uint j1 = (uint)v;
+                uint j2 = (uint)(v >> 32);
+
+                ComputeReferenceLocation(pass, lane, slice, index, j1, j2, out int refLane, out int refIndex);
+                refLanes[index] = refLane;
+                refIndices[index] = refIndex;
+            }
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ComputeReferenceLocation(
+        int pass,
+        int lane,
+        int slice,
+        int index,
+        uint j1,
+        uint j2,
+        out int refLane,
+        out int refIndex)
+    {
+        refLane = (int)(j2 % (uint)_parallelism);
+
+        // RFC 9106: In pass 0, slice 0, references are restricted to the same lane.
+        if (pass == 0 && slice == 0)
+            refLane = lane;
+
+        bool sameLane = refLane == lane;
+
+        int referenceAreaSize;
+        int startPosition;
+
+        if (pass == 0)
+        {
+            startPosition = 0;
+            if (slice == 0)
+            {
+                referenceAreaSize = index - 1;
+            }
+            else
+            {
+                // In pass 0, other lanes are only guaranteed to have completed slices < current slice.
+                // So cross-lane references cannot include the current slice's segment progress.
+                referenceAreaSize = sameLane
+                    ? (slice * _segmentLength + index - 1)
+                    : (slice * _segmentLength);
+            }
+        }
+        else
+        {
+            startPosition = ((slice + 1) * _segmentLength) % _laneLength;
+            // In passes > 0, other lanes may be computing the same slice in parallel.
+            // Cross-lane references must exclude the current segment entirely.
+            referenceAreaSize = sameLane
+                ? (_laneLength - _segmentLength + index - 1)
+                : (_laneLength - _segmentLength);
+        }
+
+        // RFC 9106 indexing rule: if referencing another lane and this is the first block
+        // of the segment, exclude the very last index from the reference set W.
+        if (!sameLane && index == 0)
+        {
+            referenceAreaSize--;
+        }
+
+        if (referenceAreaSize < 1)
+        {
+            refIndex = 0;
+            return;
+        }
+
+        ulong relativePosition = j1;
+        relativePosition = (relativePosition * relativePosition) >> 32;
+        relativePosition = (ulong)referenceAreaSize - 1 - ((ulong)referenceAreaSize * relativePosition >> 32);
+
+        refIndex = (startPosition + (int)relativePosition) % _laneLength;
     }
 
     /// <summary>
@@ -303,52 +408,11 @@ internal sealed class Argon2Engine
         int pass, int lane, int slice, int index, out int refLane, out int refIndex)
     {
         var prevBlock = GetBlockByOffset(memory, prevOffset);
-        ulong j1 = prevBlock[0];
-        ulong j2 = prevBlock[1];
+        ulong v0 = prevBlock[0];
+        uint j1 = (uint)v0;
+        uint j2 = (uint)(v0 >> 32);
 
-        refLane = (int)(j2 % (ulong)_parallelism);
-
-        int refAreaSize = CalculateRefAreaSize(pass, slice, index, refLane == lane);
-        if (refAreaSize <= 0) refAreaSize = 1;
-
-        ulong relativePosition = j1 & 0xFFFFFFFF;
-        relativePosition = (relativePosition * relativePosition) >> 32;
-        relativePosition = (ulong)refAreaSize - 1 - ((ulong)refAreaSize * relativePosition >> 32);
-
-        refIndex = (int)relativePosition;
-
-        if (refLane == lane)
-        {
-            int startPos = slice * _segmentLength;
-            if (pass == 0 && slice == 0)
-                startPos = index;
-            refIndex = (startPos + refIndex) % _laneLength;
-        }
-    }
-
-    /// <summary>
-    /// Calculate the size of the reference area.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int CalculateRefAreaSize(int pass, int slice, int index, bool sameLane)
-    {
-        if (pass == 0)
-        {
-            if (slice == 0)
-                return index > 0 ? index - 1 : 0;
-
-            if (sameLane)
-                return slice * _segmentLength + index - 1;
-            else
-                return slice * _segmentLength + (index == 0 ? -1 : 0);
-        }
-        else
-        {
-            if (sameLane)
-                return _laneLength - _segmentLength + index - 1;
-            else
-                return _laneLength - _segmentLength + (index == 0 ? -1 : 0);
-        }
+        ComputeReferenceLocation(pass, lane, slice, index, j1, j2, out refLane, out refIndex);
     }
 
     /// <summary>

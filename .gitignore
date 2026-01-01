@@ -11,6 +11,10 @@ nupkg/
 # Rider
 .idea/
 
+# Rust
+src/Argon2Sharp.Rust/target/
+
+
 # Visual Studio
 .vs/
 *.suo

@@ -26,7 +26,8 @@ A modern, high-performance, pure C# implementation of the Argon2 password hashin
 
 ## ✨ Features
 
-- **Pure C#** - No native dependencies, runs anywhere .NET runs
+- **Pure C#** - No native dependencies by default, runs anywhere .NET runs
+- **Optional Rust Backend** - High-performance native implementation via `UseRust`
 - **RFC 9106 compliant** - Argon2d, Argon2i, Argon2id support
 - **Immutable parameters** - Thread-safe `Argon2Parameters` sealed record
 - **Builder pattern** - Fluent API for parameter construction
@@ -84,6 +85,25 @@ var parameters = Argon2Parameters.CreateBuilder()
     .WithIterations(4)
     .WithParallelism(4)
     .WithRandomSalt()
+    .Build();
+
+var argon2 = new Argon2(parameters);
+byte[] hash = argon2.Hash("MyPassword123");
+```
+
+### Rust Native Backend (Optional)
+
+Enable the high-performance Rust implementation for maximum speed. Requires the native library to be available.
+
+```csharp
+using Argon2Sharp;
+
+var parameters = Argon2Parameters.CreateBuilder()
+    .WithMemorySizeKB(65536)
+    .WithIterations(4)
+    .WithParallelism(4)
+    .WithRandomSalt()
+    .WithRustImplementation() // Enable Rust backend
     .Build();
 
 var argon2 = new Argon2(parameters);

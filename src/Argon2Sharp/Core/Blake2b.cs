@@ -128,26 +128,23 @@ internal static class Blake2b
         Span<byte> hash = stackalloc byte[HashSizeInBytes];
         Hash(firstBlock, hash);
 
-        // First 32 bytes
-        hash.Slice(0, 32).CopyTo(output);
-        int pos = 32;
-        int remaining = outLen - 32;
+        // First 32 bytes (or half of hash size)
+        hash.Slice(0, HashSizeInBytes / 2).CopyTo(output);
+        int pos = HashSizeInBytes / 2;
+        int remaining = outLen - (HashSizeInBytes / 2);
 
-        // Subsequent 32-byte blocks
-        while (remaining > 32)
+        // Subsequent blocks
+        while (remaining > HashSizeInBytes)
         {
             Hash(hash, hash);
-            hash.Slice(0, 32).CopyTo(output.Slice(pos));
-            pos += 32;
-            remaining -= 32;
+            hash.Slice(0, HashSizeInBytes / 2).CopyTo(output.Slice(pos));
+            pos += HashSizeInBytes / 2;
+            remaining -= HashSizeInBytes / 2;
         }
 
-        // Final partial block
-        if (remaining > 0)
-        {
-            Hash(hash, hash);
-            hash.Slice(0, remaining).CopyTo(output.Slice(pos));
-        }
+        // Final block
+        Hash(hash, hash);
+        hash.Slice(0, remaining).CopyTo(output.Slice(pos));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

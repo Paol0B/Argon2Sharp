@@ -1,0 +1,11 @@
+[package]
+name = "argon2sharp_rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+argon2 = "0.5"
+libc = "0.2"

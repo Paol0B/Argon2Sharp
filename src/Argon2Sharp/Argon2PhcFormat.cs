@@ -57,8 +57,8 @@ public static class Argon2PhcFormat
         };
 
         string versionStr = ((int)version).ToString();
-        string saltB64 = Convert.ToBase64String(salt).TrimEnd('=');
-        string hashB64 = Convert.ToBase64String(hash).TrimEnd('=');
+        string saltB64 = Convert.ToBase64String(salt).TrimEnd('=').Replace('+', '.');
+        string hashB64 = Convert.ToBase64String(hash).TrimEnd('=').Replace('+', '.');
 
         return $"${typeStr}$v={versionStr}$m={memorySizeKB},t={iterations},p={parallelism}${saltB64}${hashB64}";
     }
@@ -178,7 +178,7 @@ public static class Argon2PhcFormat
         // Parse salt
         try
         {
-            string saltB64 = parts[3];
+            string saltB64 = parts[3].Replace('.', '+');
             // Add padding if needed
             int padding = (4 - (saltB64.Length % 4)) % 4;
             saltB64 += new string('=', padding);
@@ -192,7 +192,7 @@ public static class Argon2PhcFormat
         // Parse hash
         try
         {
-            string hashB64 = parts[4];
+            string hashB64 = parts[4].Replace('.', '+');
             // Add padding if needed
             int padding = (4 - (hashB64.Length % 4)) % 4;
             hashB64 += new string('=', padding);

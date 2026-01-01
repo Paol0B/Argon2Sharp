@@ -90,6 +90,12 @@ public sealed record Argon2Parameters
     public byte[]? AssociatedData { get; init; }
 
     /// <summary>
+    /// Use the Rust-based native implementation for core operations.
+    /// Requires the native library to be available.
+    /// </summary>
+    public bool UseRust { get; init; } = false;
+
+    /// <summary>
     /// Reserved for future use: Maximum degree of parallelism for lane processing.
     /// Currently not used - sequential processing is always employed for correctness.
     /// </summary>
@@ -233,6 +239,7 @@ public sealed record Argon2Parameters
         private byte[]? _secret;
         private byte[]? _associatedData;
         private int? _maxDegreeOfParallelism;
+        private bool _useRust;
 
         /// <summary>
         /// Sets the Argon2 algorithm type.
@@ -379,6 +386,28 @@ public sealed record Argon2Parameters
         }
 
         /// <summary>
+        /// Sets whether to use the Rust-based native implementation.
+        /// </summary>
+        /// <param name="useRust">True to use Rust implementation, false for C#.</param>
+        /// <returns>This builder instance for method chaining.</returns>
+        public Builder WithRustImplementation(bool useRust)
+        {
+            _useRust = useRust;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets whether to use the Rust-based native implementation.
+        /// </summary>
+        /// <param name="useRust">True to use Rust implementation, false for C#.</param>
+        /// <returns>This builder instance for method chaining.</returns>
+        public Builder WithRustImplementation(bool useRust = true)
+        {
+            _useRust = useRust;
+            return this;
+        }
+
+        /// <summary>
         /// Builds and validates the <see cref="Argon2Parameters"/> instance.
         /// </summary>
         /// <returns>A new immutable <see cref="Argon2Parameters"/> instance.</returns>
@@ -396,7 +425,8 @@ public sealed record Argon2Parameters
                 Salt = _salt,
                 Secret = _secret,
                 AssociatedData = _associatedData,
-                MaxDegreeOfParallelism = _maxDegreeOfParallelism
+                MaxDegreeOfParallelism = _maxDegreeOfParallelism,
+                UseRust = _useRust
             };
 
             parameters.Validate();
@@ -422,7 +452,8 @@ public sealed record Argon2Parameters
                 Salt = _salt,
                 Secret = _secret,
                 AssociatedData = _associatedData,
-                MaxDegreeOfParallelism = _maxDegreeOfParallelism
+                MaxDegreeOfParallelism = _maxDegreeOfParallelism,
+                UseRust = _useRust
             };
 
             // Validate everything except salt

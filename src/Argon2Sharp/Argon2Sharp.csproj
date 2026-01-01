@@ -12,6 +12,15 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../icon.png" Pack="true" PackagePath="/" />
+    <Content Include="runtimes/linux-x64/native/libargon2sharp_rust.so">
+      <PackagePath>runtimes/linux-x64/native/libargon2sharp_rust.so</PackagePath>
+      <Pack>true</Pack>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Argon2Sharp.Tests" />
   </ItemGroup>
 
 </Project>

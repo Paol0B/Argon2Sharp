@@ -51,87 +51,167 @@ internal static class Argon2Core
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void PermutationP(Span<ulong> block)
     {
-        // Column-wise operations - unrolled
-        CompressionG(block, 0, 8, 16, 24);
-        CompressionG(block, 32, 40, 48, 56);
-        CompressionG(block, 64, 72, 80, 88);
-        CompressionG(block, 96, 104, 112, 120);
+        // 1. Apply Blake2b round function to each of the 8 rows
+        // Row 0
+        CompressionG(block, 0, 4, 8, 12);
+        CompressionG(block, 1, 5, 9, 13);
+        CompressionG(block, 2, 6, 10, 14);
+        CompressionG(block, 3, 7, 11, 15);
+        CompressionG(block, 0, 5, 10, 15);
+        CompressionG(block, 1, 6, 11, 12);
+        CompressionG(block, 2, 7, 8, 13);
+        CompressionG(block, 3, 4, 9, 14);
 
-        CompressionG(block, 1, 9, 17, 25);
-        CompressionG(block, 33, 41, 49, 57);
-        CompressionG(block, 65, 73, 81, 89);
-        CompressionG(block, 97, 105, 113, 121);
+        // Row 1
+        CompressionG(block, 16, 20, 24, 28);
+        CompressionG(block, 17, 21, 25, 29);
+        CompressionG(block, 18, 22, 26, 30);
+        CompressionG(block, 19, 23, 27, 31);
+        CompressionG(block, 16, 21, 26, 31);
+        CompressionG(block, 17, 22, 27, 28);
+        CompressionG(block, 18, 23, 24, 29);
+        CompressionG(block, 19, 20, 25, 30);
 
-        CompressionG(block, 2, 10, 18, 26);
-        CompressionG(block, 34, 42, 50, 58);
-        CompressionG(block, 66, 74, 82, 90);
-        CompressionG(block, 98, 106, 114, 122);
+        // Row 2
+        CompressionG(block, 32, 36, 40, 44);
+        CompressionG(block, 33, 37, 41, 45);
+        CompressionG(block, 34, 38, 42, 46);
+        CompressionG(block, 35, 39, 43, 47);
+        CompressionG(block, 32, 37, 42, 47);
+        CompressionG(block, 33, 38, 43, 44);
+        CompressionG(block, 34, 39, 40, 45);
+        CompressionG(block, 35, 36, 41, 46);
 
-        CompressionG(block, 3, 11, 19, 27);
-        CompressionG(block, 35, 43, 51, 59);
-        CompressionG(block, 67, 75, 83, 91);
-        CompressionG(block, 99, 107, 115, 123);
+        // Row 3
+        CompressionG(block, 48, 52, 56, 60);
+        CompressionG(block, 49, 53, 57, 61);
+        CompressionG(block, 50, 54, 58, 62);
+        CompressionG(block, 51, 55, 59, 63);
+        CompressionG(block, 48, 53, 58, 63);
+        CompressionG(block, 49, 54, 59, 60);
+        CompressionG(block, 50, 55, 56, 61);
+        CompressionG(block, 51, 52, 57, 62);
 
-        CompressionG(block, 4, 12, 20, 28);
-        CompressionG(block, 36, 44, 52, 60);
-        CompressionG(block, 68, 76, 84, 92);
-        CompressionG(block, 100, 108, 116, 124);
+        // Row 4
+        CompressionG(block, 64, 68, 72, 76);
+        CompressionG(block, 65, 69, 73, 77);
+        CompressionG(block, 66, 70, 74, 78);
+        CompressionG(block, 67, 71, 75, 79);
+        CompressionG(block, 64, 69, 74, 79);
+        CompressionG(block, 65, 70, 75, 76);
+        CompressionG(block, 66, 71, 72, 77);
+        CompressionG(block, 67, 68, 73, 78);
 
-        CompressionG(block, 5, 13, 21, 29);
-        CompressionG(block, 37, 45, 53, 61);
-        CompressionG(block, 69, 77, 85, 93);
-        CompressionG(block, 101, 109, 117, 125);
+        // Row 5
+        CompressionG(block, 80, 84, 88, 92);
+        CompressionG(block, 81, 85, 89, 93);
+        CompressionG(block, 82, 86, 90, 94);
+        CompressionG(block, 83, 87, 91, 95);
+        CompressionG(block, 80, 85, 90, 95);
+        CompressionG(block, 81, 86, 91, 92);
+        CompressionG(block, 82, 87, 88, 93);
+        CompressionG(block, 83, 84, 89, 94);
 
-        CompressionG(block, 6, 14, 22, 30);
-        CompressionG(block, 38, 46, 54, 62);
-        CompressionG(block, 70, 78, 86, 94);
-        CompressionG(block, 102, 110, 118, 126);
+        // Row 6
+        CompressionG(block, 96, 100, 104, 108);
+        CompressionG(block, 97, 101, 105, 109);
+        CompressionG(block, 98, 102, 106, 110);
+        CompressionG(block, 99, 103, 107, 111);
+        CompressionG(block, 96, 101, 106, 111);
+        CompressionG(block, 97, 102, 107, 108);
+        CompressionG(block, 98, 103, 104, 109);
+        CompressionG(block, 99, 100, 105, 110);
 
-        CompressionG(block, 7, 15, 23, 31);
-        CompressionG(block, 39, 47, 55, 63);
-        CompressionG(block, 71, 79, 87, 95);
-        CompressionG(block, 103, 111, 119, 127);
+        // Row 7
+        CompressionG(block, 112, 116, 120, 124);
+        CompressionG(block, 113, 117, 121, 125);
+        CompressionG(block, 114, 118, 122, 126);
+        CompressionG(block, 115, 119, 123, 127);
+        CompressionG(block, 112, 117, 122, 127);
+        CompressionG(block, 113, 118, 123, 124);
+        CompressionG(block, 114, 119, 120, 125);
+        CompressionG(block, 115, 116, 121, 126);
 
-        // Row-wise operations - unrolled
-        CompressionG(block, 0, 1, 2, 3);
-        CompressionG(block, 4, 5, 6, 7);
-        CompressionG(block, 8, 9, 10, 11);
-        CompressionG(block, 12, 13, 14, 15);
+        // 2. Apply Blake2b round function to each of the 8 column-pairs
+        // Column-Pair 0
+        CompressionG(block, 0, 32, 64, 96);
+        CompressionG(block, 1, 33, 65, 97);
+        CompressionG(block, 16, 48, 80, 112);
+        CompressionG(block, 17, 49, 81, 113);
+        CompressionG(block, 0, 33, 80, 113);
+        CompressionG(block, 1, 48, 81, 96);
+        CompressionG(block, 16, 49, 64, 97);
+        CompressionG(block, 17, 32, 65, 112);
 
-        CompressionG(block, 16, 17, 18, 19);
-        CompressionG(block, 20, 21, 22, 23);
-        CompressionG(block, 24, 25, 26, 27);
-        CompressionG(block, 28, 29, 30, 31);
+        // Column-Pair 1
+        CompressionG(block, 2, 34, 66, 98);
+        CompressionG(block, 3, 35, 67, 99);
+        CompressionG(block, 18, 50, 82, 114);
+        CompressionG(block, 19, 51, 83, 115);
+        CompressionG(block, 2, 35, 82, 115);
+        CompressionG(block, 3, 50, 83, 98);
+        CompressionG(block, 18, 51, 66, 99);
+        CompressionG(block, 19, 34, 67, 114);
 
-        CompressionG(block, 32, 33, 34, 35);
-        CompressionG(block, 36, 37, 38, 39);
-        CompressionG(block, 40, 41, 42, 43);
-        CompressionG(block, 44, 45, 46, 47);
+        // Column-Pair 2
+        CompressionG(block, 4, 36, 68, 100);
+        CompressionG(block, 5, 37, 69, 101);
+        CompressionG(block, 20, 52, 84, 116);
+        CompressionG(block, 21, 53, 85, 117);
+        CompressionG(block, 4, 37, 84, 117);
+        CompressionG(block, 5, 52, 85, 100);
+        CompressionG(block, 20, 53, 68, 101);
+        CompressionG(block, 21, 36, 69, 116);
 
-        CompressionG(block, 48, 49, 50, 51);
-        CompressionG(block, 52, 53, 54, 55);
-        CompressionG(block, 56, 57, 58, 59);
-        CompressionG(block, 60, 61, 62, 63);
+        // Column-Pair 3
+        CompressionG(block, 6, 38, 70, 102);
+        CompressionG(block, 7, 39, 71, 103);
+        CompressionG(block, 22, 54, 86, 118);
+        CompressionG(block, 23, 55, 87, 119);
+        CompressionG(block, 6, 39, 86, 119);
+        CompressionG(block, 7, 54, 87, 102);
+        CompressionG(block, 22, 55, 70, 103);
+        CompressionG(block, 23, 38, 71, 118);
 
-        CompressionG(block, 64, 65, 66, 67);
-        CompressionG(block, 68, 69, 70, 71);
-        CompressionG(block, 72, 73, 74, 75);
-        CompressionG(block, 76, 77, 78, 79);
+        // Column-Pair 4
+        CompressionG(block, 8, 40, 72, 104);
+        CompressionG(block, 9, 41, 73, 105);
+        CompressionG(block, 24, 56, 88, 120);
+        CompressionG(block, 25, 57, 89, 121);
+        CompressionG(block, 8, 41, 88, 121);
+        CompressionG(block, 9, 56, 89, 104);
+        CompressionG(block, 24, 57, 72, 105);
+        CompressionG(block, 25, 40, 73, 120);
 
-        CompressionG(block, 80, 81, 82, 83);
-        CompressionG(block, 84, 85, 86, 87);
-        CompressionG(block, 88, 89, 90, 91);
-        CompressionG(block, 92, 93, 94, 95);
+        // Column-Pair 5
+        CompressionG(block, 10, 42, 74, 106);
+        CompressionG(block, 11, 43, 75, 107);
+        CompressionG(block, 26, 58, 90, 122);
+        CompressionG(block, 27, 59, 91, 123);
+        CompressionG(block, 10, 43, 90, 123);
+        CompressionG(block, 11, 58, 91, 106);
+        CompressionG(block, 26, 59, 74, 107);
+        CompressionG(block, 27, 42, 75, 122);
 
-        CompressionG(block, 96, 97, 98, 99);
-        CompressionG(block, 100, 101, 102, 103);
-        CompressionG(block, 104, 105, 106, 107);
-        CompressionG(block, 108, 109, 110, 111);
+        // Column-Pair 6
+        CompressionG(block, 12, 44, 76, 108);
+        CompressionG(block, 13, 45, 77, 109);
+        CompressionG(block, 28, 60, 92, 124);
+        CompressionG(block, 29, 61, 93, 125);
+        CompressionG(block, 12, 45, 92, 125);
+        CompressionG(block, 13, 60, 93, 108);
+        CompressionG(block, 28, 61, 76, 109);
+        CompressionG(block, 29, 44, 77, 124);
 
-        CompressionG(block, 112, 113, 114, 115);
-        CompressionG(block, 116, 117, 118, 119);
-        CompressionG(block, 120, 121, 122, 123);
-        CompressionG(block, 124, 125, 126, 127);
+        // Column-Pair 7
+        CompressionG(block, 14, 46, 78, 110);
+        CompressionG(block, 15, 47, 79, 111);
+        CompressionG(block, 30, 62, 94, 126);
+        CompressionG(block, 31, 63, 95, 127);
+        CompressionG(block, 14, 47, 94, 127);
+        CompressionG(block, 15, 62, 95, 110);
+        CompressionG(block, 30, 63, 78, 111);
+        CompressionG(block, 31, 46, 79, 126);
     }
 
     /// <summary>
@@ -141,19 +221,29 @@ internal static class Argon2Core
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillBlock(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock)
     {
+        FillBlock(prevBlock, refBlock, nextBlock, withXor: false);
+    }
+
+    /// <summary>
+    /// Argon2 block compression function.
+    /// When <paramref name="withXor"/> is true (pass &gt; 0 in Argon2 v1.3), XORs the result into <paramref name="nextBlock"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static void FillBlock(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock, bool withXor)
+    {
         // Use Vector<ulong> for SIMD operations when available
         if (Vector.IsHardwareAccelerated && Vector<ulong>.Count >= 2)
         {
-            FillBlockSimd(prevBlock, refBlock, nextBlock);
+            FillBlockSimd(prevBlock, refBlock, nextBlock, withXor);
         }
         else
         {
-            FillBlockScalar(prevBlock, refBlock, nextBlock);
+            FillBlockScalar(prevBlock, refBlock, nextBlock, withXor);
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void FillBlockSimd(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock)
+    private static void FillBlockSimd(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock, bool withXor)
     {
         Span<ulong> r = stackalloc ulong[QwordsInBlock];
         Span<ulong> z = stackalloc ulong[QwordsInBlock];
@@ -184,16 +274,27 @@ internal static class Argon2Core
             var prevVec = new Vector<ulong>(prevBlock.Slice(i));
             var refVec = new Vector<ulong>(refBlock.Slice(i));
             var zVec = new Vector<ulong>(z.Slice(i));
-            (prevVec ^ refVec ^ zVec).CopyTo(nextBlock.Slice(i));
+
+            var outVec = prevVec ^ refVec ^ zVec;
+            if (withXor)
+            {
+                var nextVec = new Vector<ulong>(nextBlock.Slice(i));
+                (nextVec ^ outVec).CopyTo(nextBlock.Slice(i));
+            }
+            else
+            {
+                outVec.CopyTo(nextBlock.Slice(i));
+            }
         }
         for (int i = vectorizedLength; i < QwordsInBlock; i++)
         {
-            nextBlock[i] = prevBlock[i] ^ refBlock[i] ^ z[i];
+            ulong outWord = prevBlock[i] ^ refBlock[i] ^ z[i];
+            nextBlock[i] = withXor ? (nextBlock[i] ^ outWord) : outWord;
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static void FillBlockScalar(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock)
+    private static void FillBlockScalar(ReadOnlySpan<ulong> prevBlock, ReadOnlySpan<ulong> refBlock, Span<ulong> nextBlock, bool withXor)
     {
         Span<ulong> r = stackalloc ulong[QwordsInBlock];
         Span<ulong> z = stackalloc ulong[QwordsInBlock];
@@ -225,18 +326,42 @@ internal static class Argon2Core
         i = 0;
         for (; i + 8 <= QwordsInBlock; i += 8)
         {
-            nextBlock[i] = prevBlock[i] ^ refBlock[i] ^ z[i];
-            nextBlock[i + 1] = prevBlock[i + 1] ^ refBlock[i + 1] ^ z[i + 1];
-            nextBlock[i + 2] = prevBlock[i + 2] ^ refBlock[i + 2] ^ z[i + 2];
-            nextBlock[i + 3] = prevBlock[i + 3] ^ refBlock[i + 3] ^ z[i + 3];
-            nextBlock[i + 4] = prevBlock[i + 4] ^ refBlock[i + 4] ^ z[i + 4];
-            nextBlock[i + 5] = prevBlock[i + 5] ^ refBlock[i + 5] ^ z[i + 5];
-            nextBlock[i + 6] = prevBlock[i + 6] ^ refBlock[i + 6] ^ z[i + 6];
-            nextBlock[i + 7] = prevBlock[i + 7] ^ refBlock[i + 7] ^ z[i + 7];
+            ulong o0 = prevBlock[i] ^ refBlock[i] ^ z[i];
+            ulong o1 = prevBlock[i + 1] ^ refBlock[i + 1] ^ z[i + 1];
+            ulong o2 = prevBlock[i + 2] ^ refBlock[i + 2] ^ z[i + 2];
+            ulong o3 = prevBlock[i + 3] ^ refBlock[i + 3] ^ z[i + 3];
+            ulong o4 = prevBlock[i + 4] ^ refBlock[i + 4] ^ z[i + 4];
+            ulong o5 = prevBlock[i + 5] ^ refBlock[i + 5] ^ z[i + 5];
+            ulong o6 = prevBlock[i + 6] ^ refBlock[i + 6] ^ z[i + 6];
+            ulong o7 = prevBlock[i + 7] ^ refBlock[i + 7] ^ z[i + 7];
+
+            if (withXor)
+            {
+                nextBlock[i] ^= o0;
+                nextBlock[i + 1] ^= o1;
+                nextBlock[i + 2] ^= o2;
+                nextBlock[i + 3] ^= o3;
+                nextBlock[i + 4] ^= o4;
+                nextBlock[i + 5] ^= o5;
+                nextBlock[i + 6] ^= o6;
+                nextBlock[i + 7] ^= o7;
+            }
+            else
+            {
+                nextBlock[i] = o0;
+                nextBlock[i + 1] = o1;
+                nextBlock[i + 2] = o2;
+                nextBlock[i + 3] = o3;
+                nextBlock[i + 4] = o4;
+                nextBlock[i + 5] = o5;
+                nextBlock[i + 6] = o6;
+                nextBlock[i + 7] = o7;
+            }
         }
         for (; i < QwordsInBlock; i++)
         {
-            nextBlock[i] = prevBlock[i] ^ refBlock[i] ^ z[i];
+            ulong outWord = prevBlock[i] ^ refBlock[i] ^ z[i];
+            nextBlock[i] = withXor ? (nextBlock[i] ^ outWord) : outWord;
         }
     }
 
