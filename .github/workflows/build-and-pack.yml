@@ -1,5 +1,8 @@
 name: Build native runtimes and pack NuGet
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
