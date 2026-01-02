@@ -94,17 +94,20 @@ jobs:
           path: artifacts
       - name: Prepare native artifacts
         run: |
+          set -euo pipefail
           mkdir -p src/Argon2Sharp.Rust/target/release
-          # place linux so
-          cp artifacts/libargon2_sharp_core.so src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so || true
-          # place windows dll
+
+          # Find and copy linux .so
+          find artifacts -type f -name 'libargon2_sharp_core.so' -exec cp {} src/Argon2Sharp.Rust/target/release/ \; || true
+
+          # Find and copy windows .dll into expected release folder
           mkdir -p src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release
-          cp artifacts/argon2_sharp_core.dll src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll || true
-          # place macos dylibs
+          find artifacts -type f -name 'argon2_sharp_core.dll' -exec cp {} src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/ \; || true
+
+          # Find and copy macOS dylibs into both x86_64 and arm64 release folders
           mkdir -p src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release
           mkdir -p src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release
-          cp artifacts/libargon2_sharp_core.dylib src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib || true
-          cp artifacts/libargon2_sharp_core.dylib src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib || true
+          find artifacts -type f -name 'libargon2_sharp_core.dylib' -exec sh -c 'cp "$1" src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/; cp "$1" src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/' _ {} \; || true
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
