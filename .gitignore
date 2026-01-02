@@ -54,3 +54,42 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+
+# === Rust / Cargo ===
+**/target/
+/debug/
+/release/
+
+# === Cargo package metadata ===
+**/*.rs.bk
+Cargo.lock
+# (If you're building a library, you may want to commit Cargo.lock)
+
+# === Rustfmt / Clippy ===
+rustfmt.toml
+.clippy.toml
+
+# === IDE / Editor files ===
+# VS Code
+.vscode/
+
+# JetBrains / IntelliJ / CLion / RustRover
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# === OS-specific ===
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Misc ===
+*.log
+*.tmp
+
