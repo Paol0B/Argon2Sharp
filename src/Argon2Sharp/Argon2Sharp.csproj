@@ -33,9 +33,33 @@
         <Pack>true</Pack>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-pc-windows-gnu/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/x86_64-pc-windows-gnu/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-x64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-x64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
       <Content Include="$(RustProjectDir)/target/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/release/libargon2_sharp_core.dylib')">
         <Link>libargon2_sharp_core.dylib</Link>
         <PackagePath>runtimes/osx-x64/native/libargon2_sharp_core.dylib</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/x86_64-apple-darwin/release/libargon2_sharp_core.dylib')">
+        <Link>libargon2_sharp_core.dylib</Link>
+        <PackagePath>runtimes/osx-x64/native/libargon2_sharp_core.dylib</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib" Condition="Exists('$(RustProjectDir)/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib')">
+        <Link>libargon2_sharp_core.dylib</Link>
+        <PackagePath>runtimes/osx-arm64/native/libargon2_sharp_core.dylib</PackagePath>
         <Pack>true</Pack>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
