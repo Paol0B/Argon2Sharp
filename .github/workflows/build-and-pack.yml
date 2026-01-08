@@ -20,16 +20,25 @@ jobs:
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-      - name: Build Rust (linux)
+      - name: Build Rust (linux x64)
         run: |
           cd src/Argon2Sharp.Rust
           cargo build --release
+      - name: Install ARM64 linker
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: Build Rust (linux arm64)
+        run: |
+          cd src/Argon2Sharp.Rust
+          rustup target add aarch64-unknown-linux-gnu
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
       - name: Upload linux native
         id: upload
         uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so
+          path: |
+            src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so
+            src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so
 
   build-windows:
     runs-on: windows-latest
@@ -42,13 +51,16 @@ jobs:
       - name: Build Rust (windows-msvc)
         run: |
           cd src\Argon2Sharp.Rust
-          rustup target add x86_64-pc-windows-msvc
+          rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
           cargo build --release --target x86_64-pc-windows-msvc
+          cargo build --release --target aarch64-pc-windows-msvc
       - name: Upload windows native
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll
+          path: |
+            src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/argon2_sharp_core.dll
+            src/Argon2Sharp.Rust/target/aarch64-pc-windows-msvc/release/argon2_sharp_core.dll
 
   build-macos:
     runs-on: macos-latest
@@ -81,33 +93,63 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: linux
-          path: artifacts
+          path: artifacts/linux
       - name: Download windows artifact
         uses: actions/download-artifact@v4
         with:
           name: windows
-          path: artifacts
+          path: artifacts/windows
       - name: Download macos artifact
         uses: actions/download-artifact@v4
         with:
           name: macos
-          path: artifacts
+          path: artifacts/macos
       - name: Prepare native artifacts
         run: |
           set -euo pipefail
+          
+          # Create expected directory structures
           mkdir -p src/Argon2Sharp.Rust/target/release
-
-          # Find and copy linux .so
-          find artifacts -type f -name 'libargon2_sharp_core.so' -exec cp {} src/Argon2Sharp.Rust/target/release/ \; || true
-
-          # Find and copy windows .dll into expected release folder
+          mkdir -p src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release
           mkdir -p src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release
-          find artifacts -type f -name 'argon2_sharp_core.dll' -exec cp {} src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/ \; || true
-
-          # Find and copy macOS dylibs into both x86_64 and arm64 release folders
+          mkdir -p src/Argon2Sharp.Rust/target/aarch64-pc-windows-msvc/release
           mkdir -p src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release
           mkdir -p src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release
-          find artifacts -type f -name 'libargon2_sharp_core.dylib' -exec sh -c 'cp "$1" src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/; cp "$1" src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/' _ {} \; || true
+
+          echo "Handling Linux artifacts..."
+          # Linux x64 (exclude aarch64 paths)
+          find artifacts/linux -type f -name 'libargon2_sharp_core.so' | grep -v 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/release/
+          # Linux arm64
+          find artifacts/linux -type f -name 'libargon2_sharp_core.so' | grep 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/
+
+          echo "Handling Windows artifacts..."
+          # Windows x64
+          find artifacts/windows -type f -name 'argon2_sharp_core.dll' | grep -v 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/x86_64-pc-windows-msvc/release/
+          # Windows arm64
+          find artifacts/windows -type f -name 'argon2_sharp_core.dll' | grep 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/aarch64-pc-windows-msvc/release/
+
+          echo "Handling MacOS artifacts..."
+          # MacOS x64
+          # We search in artifacts/macos specifically to avoid confusion, and filter by path component 'x86_64'
+          find artifacts/macos -type f -name 'libargon2_sharp_core.dylib' | grep 'x86_64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/x86_64-apple-darwin/release/
+          # MacOS arm64
+          find artifacts/macos -type f -name 'libargon2_sharp_core.dylib' | grep 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/
+          
+          # Verify architectures
+          echo "Verifying architectures of native libraries..."
+          echo "== Linux ARM64 =="
+          file src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so || true
+          echo "== MacOS ARM64 =="
+          file src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib || true
+          # Fail if MacOS ARM64 is not actually ARM64 (simple check)
+          if ! file src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release/libargon2_sharp_core.dylib | grep -q "arm64"; then
+            echo "::error::MacOS ARM64 artifact does not appear to be arm64"
+            exit 1
+          fi
+
+          # List structure for debugging
+          echo "Final structure:"
+          ls -R src/Argon2Sharp.Rust/target
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:

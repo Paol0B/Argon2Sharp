@@ -63,6 +63,18 @@
         <Pack>true</Pack>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="$(RustProjectDir)/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so" Condition="Exists('$(RustProjectDir)/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so')">
+        <Link>libargon2_sharp_core.so</Link>
+        <PackagePath>runtimes/linux-arm64/native/libargon2_sharp_core.so</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="$(RustProjectDir)/target/aarch64-pc-windows-msvc/release/argon2_sharp_core.dll" Condition="Exists('$(RustProjectDir)/target/aarch64-pc-windows-msvc/release/argon2_sharp_core.dll')">
+        <Link>argon2_sharp_core.dll</Link>
+        <PackagePath>runtimes/win-arm64/native/argon2_sharp_core.dll</PackagePath>
+        <Pack>true</Pack>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
   </Target>
 
