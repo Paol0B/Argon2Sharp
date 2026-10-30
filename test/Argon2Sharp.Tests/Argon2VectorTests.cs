@@ -59,4 +59,39 @@ public class Argon2VectorTests
         Assert.True(argon2.Verify(password, hash));
         Assert.False(argon2.Verify("wrongpassword", hash.AsSpan()));
     }
+
+    [Theory]
+    [InlineData(Argon2Type.Argon2d, "512b391b6f1162975371d30919734294f868e3be3984f3c1a13a4db9fabe4acb")]
+    [InlineData(Argon2Type.Argon2i, "c814d9d1dc7f37aa13f0d77f2494bda1c8de6b016dd388d29952a4c4672b6ce8")]
+    public void TestRfc9106_Argon2dAndArgon2i_TestVectors(Argon2Type type, string expectedHex)
+    {
+        // RFC 9106 sections 5.1 and 5.2
+        var parameters = new Argon2Parameters
+        {
+            Type = type,
+            Version = Argon2Version.Version13,
+            MemorySizeKB = 32,
+            Iterations = 3,
+            Parallelism = 4,
+            HashLength = 32,
+            Salt = Enumerable.Repeat((byte)0x02, 16).ToArray(),
+            Secret = Enumerable.Repeat((byte)0x03, 8).ToArray(),
+            AssociatedData = Enumerable.Repeat((byte)0x04, 12).ToArray()
+        };
+
+        byte[] hash = new Argon2(parameters).Hash(Enumerable.Repeat((byte)0x01, 32).ToArray().AsSpan());
+
+        Assert.Equal(expectedHex, Convert.ToHexString(hash).ToLowerInvariant());
+    }
+
+    [Fact]
+    public void TestDefaultParameters_MatchReferenceImplementation()
+    {
+        var parameters = Argon2Parameters.CreateDefault() with { Salt = "somesalt"u8.ToArray() };
+
+        byte[] hash = new Argon2(parameters).Hash("correct horse battery staple");
+
+        // phc-winner-argon2 CLI output
+        Assert.Equal("0448030d65fba6008da377dd849f43ea3859c7fee13d43cd45acb3060e4b1d13", Convert.ToHexString(hash).ToLowerInvariant());
+    }
 }
