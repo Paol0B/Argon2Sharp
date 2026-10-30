@@ -1,10 +1,12 @@
-use argon2::{Argon2, Algorithm, AssociatedData, ParamsBuilder, Version};
+use argon2::{Algorithm, Argon2, AssociatedData, ParamsBuilder, Version};
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use std::slice;
 
+/// # Safety
+/// Each non-null pointer must be valid for its length.
 #[no_mangle]
-pub extern "C" fn argon2_hash(
+pub unsafe extern "C" fn argon2_hash(
     pass: *const u8,
     pass_len: usize,
     salt: *const u8,
@@ -114,7 +116,7 @@ pub extern "C" fn argon2_hash(
         match AssociatedData::new(ad_for_params) {
             Ok(ad_obj) => {
                 params_builder.data(ad_obj);
-            },
+            }
             Err(_) => return 4, // Invalid associated data
         }
     }
@@ -132,7 +134,7 @@ pub extern "C" fn argon2_hash(
 
     // Perform hashing
     match argon2.hash_password_into(pass_slice, salt_slice, output_slice) {
-        Ok(_) => 0, // Success
+        Ok(_) => 0,  // Success
         Err(_) => 7, // Hashing failed
     }
 }
