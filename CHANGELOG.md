@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Native memory growth on Linux** ([#14](https://github.com/Paol0B/Argon2Sharp/issues/14)): the Argon2 working memory (`MemorySizeKB`, 19 MiB by default) was allocated on the C heap for every hash, and glibc kept the freed buffers in its per-thread heaps, so long-running processes grew by several times `MemorySizeKB` and could be OOM-killed in memory-limited containers
+  - The native core now maps the working memory directly from the operating system and releases it as soon as each hash completes
+  - Hash output is unchanged
+- A failed allocation of the working memory now throws `InvalidOperationException` instead of terminating the process
+
+### Security
+
+- The Argon2 working memory, which is derived from the password, is now zeroed before it is released
+
 ## [4.0.0] - 2026-01-02
 
 ### Added
@@ -171,6 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PHC string format encoding/decoding
 - .NET 8.0, 9.0, 10.0 multi-targeting
 
+[Unreleased]: https://github.com/Paol0B/Argon2Sharp/compare/4.0.1...HEAD
 [4.0.0]: https://github.com/Paol0B/Argon2id/compare/v3.5.0...v4.0.0
 [3.5.0]: https://github.com/Paol0B/Argon2id/compare/v3.0.0...v3.5.0
 [3.0.0]: https://github.com/Paol0B/Argon2id/compare/v2.0.0...v3.0.0
