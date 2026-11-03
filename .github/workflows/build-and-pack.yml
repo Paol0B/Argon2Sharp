@@ -150,6 +150,19 @@ jobs:
           # List structure for debugging
           echo "Final structure:"
           ls -R src/Argon2Sharp.Rust/target
+      - name: Check Windows DLLs do not need the VC++ Redistributable
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y llvm
+          for dll in src/Argon2Sharp.Rust/target/*-pc-windows-msvc/release/argon2_sharp_core.dll; do
+            imports="$(llvm-readobj --coff-imports "$dll" | grep 'Name:')"
+            echo "== $dll"
+            echo "$imports"
+            if echo "$imports" | grep -qiE 'vcruntime|msvcp'; then
+              echo "::error::$dll imports the VC++ runtime"
+              exit 1
+            fi
+          done
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:

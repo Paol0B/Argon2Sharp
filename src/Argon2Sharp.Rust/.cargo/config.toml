@@ -1,0 +1,3 @@
+# static CRT: the DLL must load on Windows machines without the Visual C++ Redistributable
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
