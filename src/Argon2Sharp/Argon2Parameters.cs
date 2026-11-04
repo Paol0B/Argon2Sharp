@@ -91,12 +91,11 @@ public sealed record Argon2Parameters
 
     /// <summary>
     /// Reserved for future use: Maximum degree of parallelism for lane processing.
-    /// Currently not used - sequential processing is always employed for correctness.
+    /// Currently not used.
     /// </summary>
     /// <remarks>
-    /// This property is reserved for potential future parallel processing optimization.
-    /// Due to Argon2's data-dependent addressing creating cross-lane dependencies,
-    /// parallel lane processing requires careful synchronization not yet implemented.
+    /// When <see cref="Parallelism"/> is greater than 1, the native core computes the lanes
+    /// in parallel on a shared thread pool with one thread per CPU core.
     /// </remarks>
     public int? MaxDegreeOfParallelism { get; init; }
 
