@@ -434,10 +434,10 @@ public class Argon2SecurityTests
         string password = "correctpassword";
         string phcHash = Argon2PhcFormat.HashPassword(password, memorySizeKB: 32, iterations: 2, parallelism: 1);
 
-        // Tamper with the hash (change last character)
-        char lastChar = phcHash[^1];
-        char newChar = lastChar == 'A' ? 'B' : 'A';
-        string tamperedHash = phcHash[..^1] + newChar;
+        // Tamper with the hash (change a middle character: the last one can hold only padding bits)
+        int index = phcHash.LastIndexOf('$') + 10;
+        char newChar = phcHash[index] == 'A' ? 'B' : 'A';
+        string tamperedHash = phcHash[..index] + newChar + phcHash[(index + 1)..];
 
         // Act
         bool isValid = Argon2PhcFormat.VerifyPassword(password, tamperedHash);
