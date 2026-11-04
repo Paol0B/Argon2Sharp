@@ -62,8 +62,6 @@ artifacts/
 
 # === Cargo package metadata ===
 **/*.rs.bk
-Cargo.lock
-# (If you're building a library, you may want to commit Cargo.lock)
 
 # === Rustfmt / Clippy ===
 rustfmt.toml
