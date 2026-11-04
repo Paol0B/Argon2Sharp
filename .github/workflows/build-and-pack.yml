@@ -5,6 +5,8 @@ permissions:
 
 on:
   workflow_dispatch:
+  release:
+    types: [published]
   push:
     tags:
       - 'v*'
@@ -12,8 +14,6 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    outputs:
-      linux-artifact: ${{ steps.upload.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -192,3 +192,32 @@ jobs:
         with:
           name: nupkgs
           path: nupkgs
+
+  publish:
+    if: github.event_name == 'release'
+    needs: pack
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    env:
+      PACKAGE: nupkgs/Argon2Sharp.${{ github.event.release.tag_name }}.nupkg
+    steps:
+      - name: Download nupkg
+        uses: actions/download-artifact@v4
+        with:
+          name: nupkgs
+          path: nupkgs
+      - name: Check the package version matches the release tag
+        run: test -f "$PACKAGE"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      # trusted publishing: nuget.org trades the GitHub OIDC token for a 1-hour API key
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: Paol0B
+      - name: Push to nuget.org
+        run: dotnet nuget push "$PACKAGE" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
