@@ -1,3 +1,7 @@
 # static CRT: the DLL must load on Windows machines without the Visual C++ Redistributable
 [target.'cfg(all(windows, target_env = "msvc"))']
 rustflags = ["-C", "target-feature=+crt-static"]
+
+# musl targets link the C runtime statically by default, which rules out a cdylib
+[target.'cfg(target_env = "musl")']
+rustflags = ["-C", "target-feature=-crt-static"]

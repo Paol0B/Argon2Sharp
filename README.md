@@ -231,7 +231,7 @@ dotnet test
 - **Native library binding**: The `argon2_hash` function is exposed via C FFI and marshaled securely from C# with automatic null-pointer validation.
 - **Associated data compression**: Associated data larger than the RustCrypto backend limit (32 bytes) is transparently hashed to 32 bytes using Blake2b-256, preserving semantic compatibility with RFC 9106.
 - **Automatic compilation**: Release builds trigger `cargo build --release`, compiling the Rust core and embedding native artifacts in the NuGet package.
-- **Cross-platform support**: Native libraries for `win-x64`, `linux-x64`, `osx-x64`, and `osx-arm64` are automatically compiled and packaged.
+- **Cross-platform support**: Native libraries for `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `osx-x64`, and `osx-arm64` are automatically compiled and packaged. Linux libraries need glibc 2.17 or later.
 
 ## 📄 License
 

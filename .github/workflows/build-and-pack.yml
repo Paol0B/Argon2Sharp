@@ -20,25 +20,30 @@ jobs:
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-      - name: Build Rust (linux x64)
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+      - name: Install zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.17.0
+      - name: Install cargo-zigbuild
+        run: cargo install --locked cargo-zigbuild@0.24.0
+      # glibc 2.17 keeps the library loadable on RHEL 8, Ubuntu 20.04, Debian 11 and Amazon Linux 2
+      - name: Build Rust (linux x64 and arm64, glibc and musl)
         run: |
           cd src/Argon2Sharp.Rust
-          cargo build --release
-      - name: Install ARM64 linker
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
-      - name: Build Rust (linux arm64)
-        run: |
-          cd src/Argon2Sharp.Rust
-          rustup target add aarch64-unknown-linux-gnu
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
+          for target in x86_64-unknown-linux-gnu.2.17 aarch64-unknown-linux-gnu.2.17 x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+            cargo zigbuild --release --target "$target"
+          done
       - name: Upload linux native
         id: upload
         uses: actions/upload-artifact@v4
         with:
           name: linux
           path: |
-            src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so
+            src/Argon2Sharp.Rust/target/x86_64-unknown-linux-gnu/release/libargon2_sharp_core.so
             src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so
+            src/Argon2Sharp.Rust/target/x86_64-unknown-linux-musl/release/libargon2_sharp_core.so
+            src/Argon2Sharp.Rust/target/aarch64-unknown-linux-musl/release/libargon2_sharp_core.so
 
   build-windows:
     runs-on: windows-latest
@@ -117,10 +122,11 @@ jobs:
           mkdir -p src/Argon2Sharp.Rust/target/aarch64-apple-darwin/release
 
           echo "Handling Linux artifacts..."
-          # Linux x64 (exclude aarch64 paths)
-          find artifacts/linux -type f -name 'libargon2_sharp_core.so' | grep -v 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/release/
-          # Linux arm64
-          find artifacts/linux -type f -name 'libargon2_sharp_core.so' | grep 'aarch64' | head -n 1 | xargs -I {} cp {} src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/
+          cp artifacts/linux/x86_64-unknown-linux-gnu/release/libargon2_sharp_core.so src/Argon2Sharp.Rust/target/release/
+          for target in aarch64-unknown-linux-gnu x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+            mkdir -p src/Argon2Sharp.Rust/target/$target/release
+            cp artifacts/linux/$target/release/libargon2_sharp_core.so src/Argon2Sharp.Rust/target/$target/release/
+          done
 
           echo "Handling Windows artifacts..."
           # Windows x64
@@ -163,13 +169,24 @@ jobs:
               exit 1
             fi
           done
+      - name: Check Linux glibc libraries need at most glibc 2.17
+        run: |
+          set -euo pipefail
+          for so in src/Argon2Sharp.Rust/target/release/libargon2_sharp_core.so src/Argon2Sharp.Rust/target/aarch64-unknown-linux-gnu/release/libargon2_sharp_core.so; do
+            newest="$(llvm-readelf --dyn-syms "$so" | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -n 1)"
+            echo "== $so needs $newest"
+            if [ "$(printf '%s\nGLIBC_2.17\n' "$newest" | sort -V | tail -n 1)" != "GLIBC_2.17" ]; then
+              echo "::error::$so needs $newest"
+              exit 1
+            fi
+          done
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
       - name: Pack NuGet
         run: |
-          dotnet pack src/Argon2Sharp/Argon2Sharp.csproj -c Release -o ./nupkgs /p:IncludeSymbols=false
+          dotnet pack src/Argon2Sharp/Argon2Sharp.csproj -c Release -o ./nupkgs /p:IncludeSymbols=false /p:SkipRustBuild=true
       - name: Upload nupkg
         uses: actions/upload-artifact@v4
         with:
