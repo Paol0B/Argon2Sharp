@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-11-04
+
+### Added
+
+- Alpine Linux support: the package ships `linux-musl-x64` and `linux-musl-arm64` native libraries
+
+### Changed
+
+- Native core updated to RustCrypto `argon2` 0.6 and `blake2` 0.11 (Rust 2024 edition); `Cargo.lock` is now committed
+- When `Parallelism` is greater than 1, the lanes are computed in parallel: `CreateHighSecurity()` (64 MiB, t=4, p=4) hashes about 2x faster
+- Hash output is unchanged: a new test pins 24 hashes produced by 4.0.2, covering every type, version, secret and associated data size
+
+### Fixed
+
+- Native memory no longer grows with the number of threads that hash ([#14](https://github.com/Paol0B/Argon2Sharp/issues/14)): the working memory is mapped from the OS for each hash and released right after it. On Linux it uses transparent huge pages, so the default parameters stay as fast as in 4.0.2
+- Linux libraries need glibc 2.17 instead of 2.34, so they load on RHEL 8, Ubuntu 20.04, Debian 11 and Amazon Linux 2
+- `VerifyPhcString` returns `(false, null)` instead of throwing when the PHC string has an unknown version or unusable parameters, and `TryDecode(string, out byte[]?, out Argon2Parameters?)` returns `false` for such strings
+- A panic or an allocation failure in the native core throws `InvalidOperationException` instead of terminating the process; native error messages now name the cause
+- A build with cross-compiled native libraries in `target/` no longer copies a library for the wrong architecture into the output folder
+
 ## [4.0.2] - 2026-11-03
 
 ### Fixed
