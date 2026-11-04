@@ -136,7 +136,7 @@ public static class Argon2PhcFormat
         // Parse version
         if (parts[1].StartsWith("v="))
         {
-            if (!int.TryParse(parts[1][2..], out int v))
+            if (!int.TryParse(parts[1][2..], out int v) || !Enum.IsDefined((Argon2Version)v))
                 return false;
             version = (Argon2Version)v;
         }
@@ -237,6 +237,17 @@ public static class Argon2PhcFormat
             HashLength = hash.Length,
             Salt = salt
         };
+
+        try
+        {
+            parameters.Validate();
+        }
+        catch (ArgumentException)
+        {
+            hash = null;
+            parameters = null;
+            return false;
+        }
 
         return true;
     }

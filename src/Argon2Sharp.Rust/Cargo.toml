@@ -1,12 +1,18 @@
 [package]
 name = "argon2_sharp_core"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-argon2 = "0.5"
-blake2 = "0.10"
+argon2 = { version = "0.6", default-features = false, features = ["parallel", "zeroize"] }
+blake2 = { version = "0.11", default-features = false }
+
+[target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1

@@ -550,6 +550,32 @@ public class Argon2ErrorHandlingTests
         Assert.False(success);
     }
 
+    [Theory]
+    [InlineData("$argon2id$v=20$m=32,t=2,p=1$c29tZXNhbHQ$SGVsbG9Xb3JsZA")]
+    [InlineData("$argon2id$v=19$m=4,t=2,p=1$c29tZXNhbHQ$SGVsbG9Xb3JsZA")]
+    [InlineData("$argon2id$v=19$m=32,t=0,p=1$c29tZXNhbHQ$SGVsbG9Xb3JsZA")]
+    [InlineData("$argon2id$v=19$m=32,t=2,p=0$c29tZXNhbHQ$SGVsbG9Xb3JsZA")]
+    [InlineData("$argon2id$v=19$m=32,t=2,p=1$c2FsdA$SGVsbG9Xb3JsZA")]
+    [InlineData("$argon2id$v=19$m=32,t=2,p=1$c29tZXNhbHQ$SGVs")]
+    public void TestVerifyPhcString_UnusableParameters_ReturnsFalse(string phcString)
+    {
+        var (isValid, parameters) = Argon2PhcFormat.VerifyPhcString("password", phcString);
+
+        Assert.False(isValid);
+        Assert.Null(parameters);
+        Assert.False(Argon2PhcFormat.TryDecode(phcString, out _, out Argon2Parameters? _));
+    }
+
+    [Fact]
+    public void TestHash_ShortSalt_ThrowsWithNativeReason()
+    {
+        var parameters = new Argon2Parameters { MemorySizeKB = 32, Iterations = 1, Salt = new byte[4] };
+
+        var ex = Assert.Throws<InvalidOperationException>(() => new Argon2(parameters).Hash("password"));
+
+        Assert.Contains("error code 7: invalid password, salt or hash length", ex.Message);
+    }
+
     #endregion
 
     #region Builder Pattern Error Tests

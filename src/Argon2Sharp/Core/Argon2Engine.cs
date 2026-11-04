@@ -52,9 +52,23 @@ namespace Argon2Sharp.Core
 
                 if (result != 0)
                 {
-                    throw new InvalidOperationException($"Argon2 hashing failed with error code {result}");
+                    throw new InvalidOperationException($"Argon2 hashing failed with error code {result}: {Describe(result)}");
                 }
             }
         }
+
+        private static string Describe(int code) => code switch
+        {
+            1 => "null input buffer",
+            2 => "invalid type",
+            3 => "invalid version",
+            4 => "invalid associated data",
+            5 => "invalid memory, iterations, parallelism or hash length",
+            6 => "secret too long",
+            7 => "invalid password, salt or hash length",
+            8 => "not enough memory",
+            9 => "internal error in the native core",
+            _ => "unknown error"
+        };
     }
 }
