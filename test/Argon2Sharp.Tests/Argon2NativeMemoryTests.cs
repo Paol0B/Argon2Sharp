@@ -29,7 +29,7 @@ public class Argon2NativeMemoryTests
         threads.ForEach(t => t.Join());
 
         long growthMB = (AnonymousRssKB() - before) / 1024;
-        // 4.0.2 kept a 19 MiB block per thread in the glibc heap: about 150 MiB here
+        // 4.0.1 kept a 19 MiB block per thread in the glibc heap: about 150 MiB here
         Assert.True(growthMB < 64, $"Anonymous RSS grew by {growthMB} MiB.");
     }
 

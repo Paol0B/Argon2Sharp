@@ -3,7 +3,7 @@ using Xunit;
 namespace Argon2Sharp.Tests;
 
 /// <summary>
-/// Hashes produced by Argon2Sharp 4.0.2. A failure here means stored hashes no longer verify.
+/// Hashes produced by Argon2Sharp 4.0.1. A failure here means stored hashes no longer verify.
 /// </summary>
 public class Argon2CompatibilityTests
 {
@@ -32,7 +32,7 @@ public class Argon2CompatibilityTests
     [InlineData(Argon2Type.Argon2id, Argon2Version.Version13, 64, 2, 1, 32, 1000, 64, 0, 0, "15e0c9e500d3b11ab55f32b9fdcbb4666a308b200c8543fe56e66aba08f8b422")]
     [InlineData(Argon2Type.Argon2id, Argon2Version.Version13, 19456, 2, 1, 32, 28, 16, 0, 0, "8185cb536561402027c47f55285f7c9f9e8efe5ba0cfec14cfc871a5805cd10a")]
     [InlineData(Argon2Type.Argon2id, Argon2Version.Version13, 65536, 4, 4, 32, 28, 16, 0, 0, "0aa6dbecf0b9aa806435f03b2ac4e83276cd1aed42830afba7048b5957bc1cde")]
-    public void Hash_MatchesVersion402(
+    public void Hash_MatchesVersion401(
         Argon2Type type, Argon2Version version, int memorySizeKB, int iterations, int parallelism, int hashLength,
         int passwordLength, int saltLength, int secretLength, int associatedDataLength, string expected)
     {
